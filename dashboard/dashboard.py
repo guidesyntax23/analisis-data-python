@@ -15,20 +15,34 @@ main_data['month'] = main_data['dteday'].dt.month
 # Title of the dashboard
 st.title('Dashboard Peminjaman Sepeda')
 
-# Display data
-st.subheader('Data Peminjaman Sepeda')
-st.write(main_data)
+# Filter berdasarkan rentang tanggal
+st.subheader('Filter Berdasarkan Tanggal')
+start_date = st.date_input("Pilih Tanggal Mulai", min_value=main_data['dteday'].min(), max_value=main_data['dteday'].max(), value=main_data['dteday'].min())
+end_date = st.date_input("Pilih Tanggal Selesai", min_value=main_data['dteday'].min(), max_value=main_data['dteday'].max(), value=main_data['dteday'].max())
+
+filtered_data = main_data[(main_data['dteday'] >= pd.to_datetime(start_date)) & (main_data['dteday'] <= pd.to_datetime(end_date))]
+
+# Menampilkan data yang sudah difilter
+st.write(filtered_data)
+
+# Filter berdasarkan musim (season)
+season = st.selectbox('Pilih Musim', options=[1, 2, 3, 4], help='Pilih musim: 1=Musim Semi, 2=Musim Panas, 3=Musim Gugur, 4=Musim Dingin')
+filtered_by_season = filtered_data[filtered_data['season'] == season]
+
+# Filter berdasarkan cuaca (weathersit)
+weather = st.selectbox('Pilih Cuaca', options=[1, 2, 3], help='Pilih cuaca: 1=Cuaca Cerah, 2=Cuaca Berawan, 3=Cuaca Buruk')
+filtered_by_weather = filtered_by_season[filtered_by_season['weathersit'] == weather]
 
 # Visualisasi Jumlah Peminjaman Sepeda per Bulan
 st.subheader('Jumlah Peminjaman Sepeda per Bulan')
-monthly_data = main_data.groupby(main_data['dteday'].dt.to_period('M'))['cnt'].sum().reset_index()
+monthly_data = filtered_by_weather.groupby(filtered_by_weather['dteday'].dt.to_period('M'))['cnt'].sum().reset_index()
 monthly_data.columns = ['Month', 'Total Peminjaman']
 st.line_chart(monthly_data.set_index('Month'))
 
-# Visualisasi Pengaruh Suhu dan Kelembaban
+# Visualisasi Pengaruh Suhu dan Kelembaban terhadap Jumlah Peminjaman
 st.subheader('Pengaruh Suhu dan Kelembaban terhadap Jumlah Peminjaman')
 fig, ax = plt.subplots(figsize=(10, 6))
-sns.scatterplot(data=main_data, x='temp', y='hum', hue='cnt', ax=ax)
+sns.scatterplot(data=filtered_by_weather, x='temp', y='hum', hue='cnt', ax=ax)
 ax.set_title('Pengaruh Suhu dan Kelembaban terhadap Jumlah Peminjaman')
 ax.set_xlabel('Suhu (°C)')
 ax.set_ylabel('Kelembaban (%)')
@@ -37,8 +51,8 @@ st.pyplot(fig)
 # Visualisasi Jumlah Peminjaman per Jam Berdasarkan Hari Libur
 st.subheader('Jumlah Peminjaman per Jam Berdasarkan Hari Libur')
 
-# Menggunakan data dari main_data
-hourly_data = main_data[['dteday', 'hourly_cnt', 'holiday']]  # Mengambil kolom yang relevan
+# Menggunakan data dari filtered_by_weather
+hourly_data = filtered_by_weather[['dteday', 'hourly_cnt', 'holiday']]  # Mengambil kolom yang relevan
 hourly_data['hour'] = hourly_data['dteday'].dt.hour  # Mengambil jam dari dteday
 hourly_data = hourly_data.groupby(['hour', 'holiday']).agg({'hourly_cnt': 'sum'}).reset_index()
 
@@ -53,39 +67,39 @@ st.pyplot(fig2)
 st.subheader('RFM Analysis')
 
 # Recency: calculate days since last rental
-last_date = main_data['dteday'].max()
-main_data['Recency'] = (last_date - main_data['dteday']).dt.days
+last_date = filtered_by_weather['dteday'].max()
+filtered_by_weather['Recency'] = (last_date - filtered_by_weather['dteday']).dt.days
 
 # Frequency: total rentals per day
-main_data['Frequency'] = main_data['cnt']
+filtered_by_weather['Frequency'] = filtered_by_weather['cnt']
 
 # Monetary: using 'cnt' as monetary
-main_data['Monetary'] = main_data['cnt']
+filtered_by_weather['Monetary'] = filtered_by_weather['cnt']
 
 # Displaying RFM distributions
 fig3, axes = plt.subplots(1, 3, figsize=(15, 5))
 
 # Recency
-axes[0].hist(main_data['Recency'], bins=30, color='skyblue')
+axes[0].hist(filtered_by_weather['Recency'], bins=30, color='skyblue')
 axes[0].set_title('Distribusi Recency')
 
 # Frequency
-axes[1].hist(main_data['Frequency'], bins=30, color='orange')
+axes[1].hist(filtered_by_weather['Frequency'], bins=30, color='orange')
 axes[1].set_title('Distribusi Frequency')
 
 # Monetary
-axes[2].hist(main_data['Monetary'], bins=30, color='green')
+axes[2].hist(filtered_by_weather['Monetary'], bins=30, color='green')
 axes[2].set_title('Distribusi Monetary')
 
 st.pyplot(fig3)
 
 # Adding RFM scores
-main_data['Recency_Score'] = pd.qcut(main_data['Recency'], 3, labels=['High', 'Medium', 'Low'])
-main_data['Frequency_Score'] = pd.qcut(main_data['Frequency'], 3, labels=['Low', 'Medium', 'High'])
-main_data['Monetary_Score'] = pd.qcut(main_data['Monetary'], 3, labels=['Low', 'Medium', 'High'])
+filtered_by_weather['Recency_Score'] = pd.qcut(filtered_by_weather['Recency'], 3, labels=['High', 'Medium', 'Low'])
+filtered_by_weather['Frequency_Score'] = pd.qcut(filtered_by_weather['Frequency'], 3, labels=['Low', 'Medium', 'High'])
+filtered_by_weather['Monetary_Score'] = pd.qcut(filtered_by_weather['Monetary'], 3, labels=['Low', 'Medium', 'High'])
 
 st.write("RFM Scores (Recency, Frequency, and Monetary)")
-st.write(main_data[['dteday', 'Recency', 'Frequency', 'Monetary', 'Recency_Score', 'Frequency_Score', 'Monetary_Score']].head())
+st.write(filtered_by_weather[['dteday', 'Recency', 'Frequency', 'Monetary', 'Recency_Score', 'Frequency_Score', 'Monetary_Score']].head())
 
 # Conclusion and Recommendations
 st.subheader('Conclusion and Recommendations')
