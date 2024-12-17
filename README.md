@@ -1,18 +1,24 @@
-# Dashboard Peminjaman Sepeda
+# Dashboard Peminjaman Sepeda 📊
 
-## Deskripsi
-Dashboard ini menyajikan analisis peminjaman sepeda berdasarkan data suhu, kelembaban, dan hari libur. Data yang digunakan berasal dari dataset `day.csv` dan `hour.csv`.
+## Membuat Folder Proyek
+```
+mkdir proyek_analisis_data
+cd proyek_analisis_data
+```
 
-## Cara Menjalankan
-1. Pastikan Anda telah menginstal semua dependensi yang diperlukan. Anda dapat menggunakan `pip install -r requirements.txt`.
-2. Jalankan aplikasi Streamlit dengan perintah:
-`streamlit run dashboard/dashboard.py`
+## Membuat dan Mengaktifkan Virtual Environment
+```
+python3 -m venv env
+source env/bin/activate
+```
 
-## Dataset
-- `day.csv`: Data peminjaman sepeda harian.
-- `hour.csv`: Data peminjaman sepeda per jam.
+## Menginstal Library
+```
+pip install pipreqs
+piprqs .
+```
 
-## Insight
-- Suhu yang lebih tinggi cenderung meningkatkan jumlah peminjaman sepeda.
-- Kelembaban yang tinggi dapat menurunkan jumlah peminjaman.
-- Hari libur mempengaruhi jumlah peminjaman sepeda pada jam-jam tertentu.
+## Run steamlit app
+```
+streamlit run dashboard.py
+```
